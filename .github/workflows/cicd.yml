@@ -1,0 +1,16 @@
+name: KBOT-CICD
+
+on: push
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Run test
+        run: make test
+
