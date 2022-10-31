@@ -21,4 +21,5 @@ jobs:
       - name: Build & Push
         env:
           REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
+          APP: kbot
         run: make image push
