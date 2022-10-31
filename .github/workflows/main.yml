@@ -5,19 +5,19 @@ on: push
 jobs:
   ci:
     name: CI
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
 
     steps:
 
-     - name: Checkout code
-       uses: actions/checkout@3
+    - name: Checkout code
+      uses: actions/checkout@3
 
     - name: Run test
       run: make test
 
   cd:
     name: CD
-
+    needs: ci
     steps:
 
      - name: Checkout code
