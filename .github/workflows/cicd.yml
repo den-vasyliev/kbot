@@ -19,5 +19,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build & Push
-        run: make REGISTRY=${{ secrets.DOCKERHUB_USERNAME }} image push
+        env:
+          REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: make REGISTRY=$REGISTRY image push
 
