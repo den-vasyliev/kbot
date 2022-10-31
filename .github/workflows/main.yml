@@ -1,0 +1,24 @@
+name: KBOT-CICD
+
+on: push
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu
+
+    steps:
+
+     - name: Checkout code
+       uses: actions/checkout@3
+
+    - name: Run test
+      run: make test
+
+  cd:
+    name: CD
+
+    steps:
+
+     - name: Checkout code
+       uses: actions/checkout@3 
