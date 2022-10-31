@@ -21,5 +21,4 @@ jobs:
       - name: Build & Push
         env:
           REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
-        run: echo $REGISTRY
-
+        run: make image push
