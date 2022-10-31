@@ -22,4 +22,4 @@ jobs:
         env:
           REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
           APP: kbot
-        run: git fetch --tags && git describe --tags --abbrev=0
+        run: git tag
