@@ -8,20 +8,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - run: git describe --tags --abbrev=0
 
-      - name: Run test
-        run: make test
-      - name: Docker Hub login
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build & Push
-        env:
-          REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
-          APP: kbot
-        run: git describe --tags --abbrev=0
