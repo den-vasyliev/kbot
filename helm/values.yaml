@@ -1,13 +1,10 @@
 # Default values for helm.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-
 replicaCount: 1
-
 image:
   repository: "denvasyliev"
-  tag: "v1.0.6-185bbaf"
-
+  tag: "v1.0.7-30df357"
 secret:
   name: "TELE_TOKEN"
   tokenKey: "token"
