@@ -36,7 +36,9 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
-      run: echo "VERSION=$(git describe --tags --abbrev=0)-git rev-parse --short HEAD" >> $GITHUB_ENV
+
+    - uses: actions/checkout@v3
+    - run: echo "VERSION=$(git describe --tags --abbrev=0)-git rev-parse --short HEAD" >> $GITHUB_ENV
 
     - name: update version
       uses: mikefarah/yq@3.3.2
