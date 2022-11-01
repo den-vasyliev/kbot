@@ -4,7 +4,9 @@
 replicaCount: 1
 image:
   repository: "denvasyliev"
+  app: "kbot"
   tag: "v1.0.7-9496116"
+  arch: "arm64"
 secret:
   name: "TELE_TOKEN"
   tokenKey: "token"
