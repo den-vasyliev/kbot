@@ -5,9 +5,8 @@ replicaCount: 1
 image:
   repository: "denvasyliev"
   app: "kbot"
-  tag: "v1.0.7-3930015"
+  tag: "v1.0.7-679a792"
   arch: "arm64"
-
 secret:
   name: "kbot"
   tokenKey: "token"
