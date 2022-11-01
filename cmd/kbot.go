@@ -68,7 +68,7 @@ to quickly create a Cobra application.`,
 
 			var (
 				err error
-				pin = rpio.Pin(0)
+				//pin = rpio.Pin(0)
 			)
 			log.Print(m.Message().Payload, m.Text())
 			payload := m.Message().Payload
@@ -78,12 +78,12 @@ to quickly create a Cobra application.`,
 				err = m.Send(fmt.Sprintf("Hello I'm Kbot %s!", appVersion))
 
 			case "red", "amber", "green":
-				pin = rpio.Pin(trafficSignal[payload]["pin"])
+				//pin = rpio.Pin(trafficSignal[payload]["pin"])
 				if trafficSignal[payload]["on"] == 0 {
-					pin.Output()
+					//pin.Output()
 					trafficSignal[payload]["on"] = 1
 				} else {
-					pin.Input()
+					//pin.Input()
 					trafficSignal[payload]["on"] = 0
 				}
 				err = m.Send(fmt.Sprintf("Switch %s light signal to %d", payload, trafficSignal[payload]["on"]))
