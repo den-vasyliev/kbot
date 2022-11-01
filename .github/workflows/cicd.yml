@@ -34,7 +34,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-dept: 0
+        fetch-depth: 0
     - run: echo "VERSION=$(git describe --tags --abbrev=0)-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
     - uses: mikefarah/yq@master
