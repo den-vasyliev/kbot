@@ -32,22 +32,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - run: echo "VERSION=$(git describe --tags --abbrev=0)-git rev-parse --short HEAD" >> $GITHUB_ENV
 
-    - uses: actions/checkout@v3
-    - run: echo "VERSION=$(git describe --tags --abbrev=0)-git rev-parse --short HEAD" >> $GITHUB_ENV
+      - uses: mikefarah/yq@3.3.2
+        with:
+          cmd: yq -i '.image.tag=strenv(VERSION)' helm/values.yml
 
-    - name: update version
-      uses: mikefarah/yq@3.3.2
-      with:
-        cmd: yq -i '.image.tag=strenv(VERSION)' helm/values.yml
-
-    - name: push changes
-      uses: actions/checkout@v3
-      run: |
+      - uses: actions/checkout@v3
+      - run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add .
