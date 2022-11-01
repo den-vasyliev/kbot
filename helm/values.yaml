@@ -5,12 +5,11 @@ replicaCount: 1
 image:
   repository: "denvasyliev"
   app: "kbot"
-  tag: "v1.0.7-6f1ba24"
+  tag: "v1.0.7-562ca8e"
   arch: "arm64"
 secret:
   name: "kbot"
   tokenKey: "token"
   tokenName: "TELE_TOKEN"
-
 securityContext:
   privileged: true
