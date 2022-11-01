@@ -42,7 +42,7 @@ spec:
           image: "{{ .Values.image.repository }}/{{ .Values.image.app }}:{{ .Values.image.tag }}-{{ .Values.image.arch}}"
           env:
           - name: {{ .Values.secret.tokenName }}
-            valueFROM:
+            valueFrom:
               secretKeyRef:
                 key: {{ .Values.secret.tokenKey }}
                 name: {{ .Values.secret.name }}
