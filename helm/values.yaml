@@ -11,5 +11,6 @@ secret:
   name: "kbot"
   tokenKey: "token"
   tokenName: "TELE_TOKEN"
-podSecurityContext:
+
+securityContext:
   privileged: true
