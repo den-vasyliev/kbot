@@ -28,7 +28,6 @@ jobs:
     
   cd:
     name: CD
-    needs: ci
     runs-on: ubuntu-latest
 
     steps:
@@ -41,7 +40,6 @@ jobs:
       with:
         cmd: yq -i '.image.tag=strenv(VERSION)' helm/values.yaml
 
-    - uses: actions/checkout@v3
     - run: |
         cat helm/values.yaml
         git config user.name github-actions
