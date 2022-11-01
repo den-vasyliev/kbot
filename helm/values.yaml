@@ -4,7 +4,7 @@
 replicaCount: 1
 image:
   repository: "denvasyliev"
-  tag: "v1.0.7-a728359"
+  tag: "v1.0.7-9496116"
 secret:
   name: "TELE_TOKEN"
   tokenKey: "token"
