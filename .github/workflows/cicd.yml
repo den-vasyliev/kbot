@@ -14,7 +14,7 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: /s ok
+          message: /s@denvasyliev_bot
               
                           
       - name: Checkout
