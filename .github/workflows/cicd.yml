@@ -55,7 +55,7 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: |
-              /status green
+              /s green
               
     - name: send telegram message on failure
       if: failure()
@@ -64,7 +64,7 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: |
-              /status red
+              /s red
     
     
     
