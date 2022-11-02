@@ -8,15 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    
-      - name: send telegram message on push
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-              /status ok
-            
+                          
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -34,6 +26,24 @@ jobs:
           APP: "kbot"
           REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
         run: make image push
+        
+      - name: send telegram message on success
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+              /status green
+              
+      - name: send telegram message on failure
+        if: failure
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+              /status red
 
   cd:
     name: CD
