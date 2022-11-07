@@ -9,3 +9,6 @@ secret:
   name: "kbot"
   env: "TELE_TOKEN"
   key: "token"
+
+securityContext:
+  privileged: true
