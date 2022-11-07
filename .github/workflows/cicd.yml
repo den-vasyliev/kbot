@@ -8,14 +8,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    
-      - name: telebot
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: /s@denvasyliev_bot
-              
                           
       - name: Checkout
         uses: actions/checkout@v3
@@ -57,20 +49,4 @@ jobs:
         git config user.email github-actions@github.com
         git commit -am "update version $VERSION"
         git push
-    
-    - uses: appleboy/telegram-action@master
-      with:
-        to: ${{ secrets.TELEGRAM_TO }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: /s green
-              
-    - name: send telegram message on failure
-      if: failure()
-      uses: appleboy/telegram-action@master
-      with:
-        to: ${{ secrets.TELEGRAM_TO }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: /s red
-    
-    
-    
+
