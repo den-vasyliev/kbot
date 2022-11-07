@@ -16,7 +16,7 @@ jobs:
 
       - name: Run test
         run: make test
-        
+
       - name: Docker Hub login
         uses: docker/login-action@v2
         with:
@@ -28,7 +28,6 @@ jobs:
           REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
         run: make image push
         
-
   cd:
     name: CD
     needs: ci
