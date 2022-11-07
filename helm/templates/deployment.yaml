@@ -18,12 +18,31 @@ spec:
       labels:
         {{- include "helm.selectorLabels" . | nindent 8 }}
     spec:
+      dnsConfig:
+        nameservers:
+          - 1.1.1.1
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      volumes:
+      - hostPath:
+          path: /dev/mem
+          type: ""
+        name: dev-mem
       containers:
         - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+          - mountPath: /dev/mem
+            name: dev-mem
           image: {{ .Values.image.repository }}/{{ .Chart.Name }}:{{ .Values.image.tag }}-{{ .Values.image.arch | default "arm64"}}
           env:
-          - name: {{ .Values.secret.env }}
+          - name: {{ .Values.secret.tokenName }}
             valueFrom:
               secretKeyRef:
-                key: {{ .Values.secret.key }}
+                key: {{ .Values.secret.tokenKey }}
                 name: {{ .Values.secret.name }}
