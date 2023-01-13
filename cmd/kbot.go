@@ -88,10 +88,9 @@ to quickly create a Cobra application.`,
 				}
 
 				err = m.Send(fmt.Sprintf("Switch %s light signal to %d", payload, trafficSignal[payload]["on"]))
-			case "help":
-				err = m.Send("Usage: /s red|amber|green")
+
 			default:
-				err = m.Send(fmt.Sprintf("Hello I'm Kbot %s!", appVersion))
+				err = m.Send("Usage: /s red|amber|green")
 
 			}
 
