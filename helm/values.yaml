@@ -4,7 +4,7 @@
 replicaCount: 1
 image:
   repository: "denvasyliev"
-  tag: "v1.0.7-e939099"
+  tag: "v1.0.7-47ab1a1"
 secret:
   name: "kbot"
   env: "TELE_TOKEN"
