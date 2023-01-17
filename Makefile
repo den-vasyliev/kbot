@@ -2,7 +2,7 @@ APP := $(shell basename $(shell git remote get-url origin))
 REGISTRY := denvasyliev
 VERSION=$(shell git describe --tags --abbrev=0)-$(shell git rev-parse --short HEAD)
 TARGETOS=linux #linux darwin windows
-TARGETARCH=arm64 #amd64 arm64
+TARGETARCH=amd64 #amd64 arm64
 
 format:
 	gofmt -s -w ./
