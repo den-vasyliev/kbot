@@ -4,7 +4,7 @@
 replicaCount: 1
 image:
   repository: "denvasyliev"
-  tag: "v1.0.7-4556562"
+  tag: "v1.0.7-fc738a2"
   arch: amd64
 secret:
   name: "kbot"
