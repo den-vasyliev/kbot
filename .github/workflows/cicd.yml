@@ -31,7 +31,7 @@ jobs:
           REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
         run: make image push TARGETARCH=$TARGETARCH
       - name: Clean
-        run: make clean
+        run: make clean TARGETARCH=$TARGETARCH
       
   cd:
     name: CD
