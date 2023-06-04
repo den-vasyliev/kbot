@@ -44,7 +44,7 @@ func initMetrics(ctx context.Context) {
 	// labels/tags/resources that are common to all metrics.
 	resource := resource.NewWithAttributes(
 		semconv.SchemaURL,
-		semconv.ServiceNameKey.String(appVersion),
+		semconv.ServiceNameKey.String(fmt.Sprintf("kbot_%s", appVersion)),
 	)
 
 	mp := sdkmetric.NewMeterProvider(
