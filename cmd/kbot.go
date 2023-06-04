@@ -4,20 +4,56 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stianeikeland/go-rpio"
+	//	"github.com/stianeikeland/go-rpio"
 	telebot "gopkg.in/telebot.v3"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 )
 
 var (
+
+	// Load Telegram token from file
+	tokenBytes, _ = ioutil.ReadFile("/data/telegram_token.txt")
 	// TeleToken bot
-	TeleToken = os.Getenv("TELE_TOKEN")
+	//TeleToken = os.Getenv("TELE_TOKEN")
+
+	TeleToken = string(tokenBytes)
 )
+
+// Initialize OpenTelemetry
+func initTracer() {
+	ctx := context.Background()
+
+	// Set up OTLP exporter
+	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("failed to create exporter: %v", err)
+	}
+
+	// Set up tracer provider with OTLP exporter and resource
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(appVersion),
+		)),
+	)
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+}
 
 // kbotCmd represents the kbot command
 var kbotCmd = &cobra.Command{
@@ -45,12 +81,12 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		err = rpio.Open()
-		if err != nil {
-			log.Printf("Unable to open gpio: %s", err.Error())
-		}
+		// err = rpio.Open()
+		// if err != nil {
+		// 	log.Printf("Unable to open gpio: %s", err.Error())
+		// }
 
-		defer rpio.Close()
+		// defer rpio.Close()
 
 		trafficSignal := make(map[string]map[string]int8)
 
@@ -66,10 +102,16 @@ to quickly create a Cobra application.`,
 
 		kbot.Handle(telebot.OnText, func(m telebot.Context) error {
 
-			var (
-				err error
-				pin = rpio.Pin(0)
-			)
+			// Start a new span
+			ctx := context.Background()
+			tracer := otel.Tracer("kbot")
+			ctx, span := tracer.Start(ctx, "OnText")
+			defer span.End()
+
+			// var (
+			// 	err error
+			// 	pin = rpio.Pin(0)
+			// )
 			log.Print(m.Message().Payload, m.Text())
 			payload := m.Message().Payload
 
@@ -78,12 +120,12 @@ to quickly create a Cobra application.`,
 				err = m.Send(fmt.Sprintf("Hello I'm Kbot %s!", appVersion))
 
 			case "red", "amber", "green":
-				pin = rpio.Pin(trafficSignal[payload]["pin"])
+				// pin = rpio.Pin(trafficSignal[payload]["pin"])
 				if trafficSignal[payload]["on"] == 0 {
-					pin.Output()
+					// pin.Output()
 					trafficSignal[payload]["on"] = 1
 				} else {
-					pin.Input()
+					// pin.Input()
 					trafficSignal[payload]["on"] = 0
 				}
 
@@ -114,4 +156,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// kbotCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	// Initialize OpenTelemetry tracer
+	initTracer()
 }
