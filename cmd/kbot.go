@@ -130,8 +130,8 @@ to quickly create a Cobra application.`,
 }
 
 func pmetrics(ctx context.Context, payload string) {
-	meter := otel.GetMeterProvider().Meter(fmt.Sprintf("kbot_light_signal_%s", payload))
-	counter, _ := meter.Int64Counter(payload)
+	meter := otel.GetMeterProvider().Meter("kbot_light_signal_counter")
+	counter, _ := meter.Int64Counter(fmt.Sprintf("kbot_light_signal_%s", payload))
 	counter.Add(ctx, 1)
 }
 func init() {
