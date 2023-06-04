@@ -29,13 +29,14 @@ import (
 )
 
 var (
-
-	// Load Telegram token from file
-	tokenBytes, _ = ioutil.ReadFile("/data/telegram_token.txt")
 	// TeleToken bot
+	TokenFile   = os.Getenv("TOKEN_FILE")
 	TraceHost   = os.Getenv("TRACE_HOST")
 	MetricsHost = os.Getenv("METRICS_HOST")
-	TeleToken   = string(tokenBytes)
+	// Load Telegram token from file
+	tokenBytes, _ = ioutil.ReadFile(TokenFile)
+
+	TeleToken = string(tokenBytes)
 )
 
 // Initialize OpenTelemetry
@@ -111,7 +112,7 @@ to quickly create a Cobra application.`,
 		})
 
 		if err != nil {
-			log.Fatalf("Plaese check TELE_TOKEN env variable. %s", err)
+			log.Fatalf("Plaese check TOKEN_FILE. %s", err)
 			return
 		}
 
@@ -155,9 +156,8 @@ to quickly create a Cobra application.`,
 				ctx, span := tracer.Start(
 					ctx,
 					"OnText",
-					trace.WithAttributes(attribute.String("component", "addition")),
-					trace.WithAttributes(attribute.String("someKey", "someValue")),
-					trace.WithAttributes(attribute.Int("age", 89)),
+					trace.WithAttributes(attribute.String("component", "kbot")),
+					trace.WithAttributes(attribute.String("TraceID", trace.TraceID{1, 2, 3, 4}.String())),
 				)
 				defer span.End()
 
@@ -166,7 +166,9 @@ to quickly create a Cobra application.`,
 				logger.Info().Str("TraceID", trace_id).Msg(payload)
 
 				meter := otel.GetMeterProvider().Meter("example")
-				counter, _ := meter.Int64Counter("l")
+				counter, _ := meter.Int64Counter("telebot_OnText")
+				// Bind the counter to some labels
+
 				counter.Add(ctx, 1)
 				// pin = rpio.Pin(trafficSignal[payload]["pin"])
 				if trafficSignal[payload]["on"] == 0 {
