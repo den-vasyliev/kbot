@@ -14,16 +14,17 @@ import (
 	"github.com/spf13/cobra"
 
 	//	"github.com/stianeikeland/go-rpio"
-	telebot "gopkg.in/telebot.v3"
-
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"go.opentelemetry.io/otel/trace"
+	telebot "gopkg.in/telebot.v3"
 )
 
 var (
@@ -31,13 +32,40 @@ var (
 	// Load Telegram token from file
 	tokenBytes, _ = ioutil.ReadFile("/data/telegram_token.txt")
 	// TeleToken bot
-	TraceHost = os.Getenv("TRACE_HOST")
-	TeleToken = string(tokenBytes)
+	TraceHost   = os.Getenv("TRACE_HOST")
+	MetricsHost = os.Getenv("METRICS_HOST")
+	TeleToken   = string(tokenBytes)
 )
 
 // Initialize OpenTelemetry
-func initTracer() {
-	ctx := context.Background()
+func initMetrics(ctx context.Context) {
+
+	exporter, _ := otlpmetricgrpc.New(
+		ctx,
+		otlpmetricgrpc.WithEndpoint(MetricsHost),
+		otlpmetricgrpc.WithInsecure(),
+	)
+
+	// labels/tags/resources that are common to all metrics.
+	resource := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(appVersion),
+		attribute.String("some-attribute", "some-value"),
+	)
+
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithResource(resource),
+		sdkmetric.WithReader(
+			// collects and exports metric data every 30 seconds.
+			sdkmetric.NewPeriodicReader(exporter, sdkmetric.WithInterval(30*time.Second)),
+		),
+	)
+	otel.SetMeterProvider(mp)
+
+}
+
+// Initialize OpenTelemetry
+func initTracer(ctx context.Context) {
 
 	// Set up OTLP exporter
 	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(TraceHost), otlptracegrpc.WithInsecure())
@@ -109,7 +137,9 @@ to quickly create a Cobra application.`,
 			// Start a new span
 			ctx := context.Background()
 			tracer := otel.Tracer("kbot")
-			ctx, span := tracer.Start(ctx, "OnText",
+			ctx, span := tracer.Start(
+				ctx,
+				"OnText",
 				trace.WithAttributes(attribute.String("component", "addition")),
 				trace.WithAttributes(attribute.String("someKey", "someValue")),
 				trace.WithAttributes(attribute.Int("age", 89)),
@@ -128,6 +158,9 @@ to quickly create a Cobra application.`,
 				err = m.Send(fmt.Sprintf("Hello I'm Kbot %s!", appVersion))
 
 			case "red", "amber", "green":
+				meter := otel.GetMeterProvider().Meter("example")
+				counter, _ := meter.Int64Counter("l")
+				counter.Add(ctx, 1)
 				// pin = rpio.Pin(trafficSignal[payload]["pin"])
 				if trafficSignal[payload]["on"] == 0 {
 					// pin.Output()
@@ -153,6 +186,9 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
+	ctx := context.Background()
+	initTracer(ctx)
+	initMetrics(ctx)
 	rootCmd.AddCommand(kbotCmd)
 
 	// Here you will define your flags and configuration settings.
@@ -166,5 +202,5 @@ func init() {
 	// kbotCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	// Initialize OpenTelemetry tracer
-	initTracer()
+
 }
