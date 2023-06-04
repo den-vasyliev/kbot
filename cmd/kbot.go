@@ -8,18 +8,22 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
+
 	//	"github.com/stianeikeland/go-rpio"
 	telebot "gopkg.in/telebot.v3"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -27,8 +31,7 @@ var (
 	// Load Telegram token from file
 	tokenBytes, _ = ioutil.ReadFile("/data/telegram_token.txt")
 	// TeleToken bot
-	//TeleToken = os.Getenv("TELE_TOKEN")
-
+	TraceHost = os.Getenv("TRACE_HOST")
 	TeleToken = string(tokenBytes)
 )
 
@@ -37,7 +40,7 @@ func initTracer() {
 	ctx := context.Background()
 
 	// Set up OTLP exporter
-	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithInsecure())
+	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(TraceHost), otlptracegrpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("failed to create exporter: %v", err)
 	}
@@ -48,6 +51,7 @@ func initTracer() {
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(appVersion),
+			attribute.String("some-attribute", "some-value"),
 		)),
 	)
 
@@ -105,7 +109,11 @@ to quickly create a Cobra application.`,
 			// Start a new span
 			ctx := context.Background()
 			tracer := otel.Tracer("kbot")
-			ctx, span := tracer.Start(ctx, "OnText")
+			ctx, span := tracer.Start(ctx, "OnText",
+				trace.WithAttributes(attribute.String("component", "addition")),
+				trace.WithAttributes(attribute.String("someKey", "someValue")),
+				trace.WithAttributes(attribute.Int("age", 89)),
+			)
 			defer span.End()
 
 			// var (
