@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"time"
 
@@ -16,22 +15,16 @@ import (
 	//	"github.com/stianeikeland/go-rpio"
 	"github.com/hirosassa/zerodriver"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
-	"go.opentelemetry.io/otel/trace"
 	telebot "gopkg.in/telebot.v3"
 )
 
 var (
 	// TeleToken bot
 	TokenFile   = os.Getenv("TOKEN_FILE")
-	TraceHost   = os.Getenv("TRACE_HOST")
 	MetricsHost = os.Getenv("METRICS_HOST")
 	// Load Telegram token from file
 	tokenBytes, _ = ioutil.ReadFile(TokenFile)
@@ -52,41 +45,17 @@ func initMetrics(ctx context.Context) {
 	resource := resource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.ServiceNameKey.String(appVersion),
-		attribute.String("some-attribute", "some-value"),
 	)
 
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(resource),
 		sdkmetric.WithReader(
-			// collects and exports metric data every 30 seconds.
-			sdkmetric.NewPeriodicReader(exporter, sdkmetric.WithInterval(30*time.Second)),
+			// collects and exports metric data every 10 seconds.
+			sdkmetric.NewPeriodicReader(exporter, sdkmetric.WithInterval(10*time.Second)),
 		),
 	)
 	otel.SetMeterProvider(mp)
 
-}
-
-// Initialize OpenTelemetry
-func initTracer(ctx context.Context) {
-
-	// Set up OTLP exporter
-	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(TraceHost), otlptracegrpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("failed to create exporter: %v", err)
-	}
-
-	// Set up tracer provider with OTLP exporter and resource
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(appVersion),
-			attribute.String("some-attribute", "some-value"),
-		)),
-	)
-
-	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.TraceContext{})
 }
 
 // kbotCmd represents the kbot command
@@ -103,8 +72,6 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := zerodriver.NewProductionLogger()
 
-		fmt.Printf("kbot %s started", appVersion)
-
 		kbot, err := telebot.NewBot(telebot.Settings{
 			URL:    "",
 			Token:  TeleToken,
@@ -112,16 +79,12 @@ to quickly create a Cobra application.`,
 		})
 
 		if err != nil {
-			log.Fatalf("Plaese check TOKEN_FILE. %s", err)
+			logger.Fatal().Str("Error", err.Error()).Msg("Please check TOKEN_FILE")
 			return
+		} else {
+			logger.Info().Str("Version", appVersion).Msg("kbot started")
+
 		}
-
-		// err = rpio.Open()
-		// if err != nil {
-		// 	log.Printf("Unable to open gpio: %s", err.Error())
-		// }
-
-		// defer rpio.Close()
 
 		trafficSignal := make(map[string]map[string]int8)
 
@@ -130,19 +93,14 @@ to quickly create a Cobra application.`,
 		trafficSignal["green"] = make(map[string]int8)
 
 		trafficSignal["red"]["pin"] = 12
-		//default on/off
-		//trafficSignal["red"]["on"]=0
 		trafficSignal["amber"]["pin"] = 27
 		trafficSignal["green"]["pin"] = 22
 
 		kbot.Handle(telebot.OnText, func(m telebot.Context) error {
+			logger.Info().Str("Payload", m.Text()).Msg(m.Message().Payload)
 
-			// var (
-			// 	err error
-			// 	pin = rpio.Pin(0)
-			// )
-			log.Print(m.Message().Payload, m.Text())
 			payload := m.Message().Payload
+			pmetrics(context.Background(), payload)
 
 			switch payload {
 			case "hello":
@@ -150,32 +108,9 @@ to quickly create a Cobra application.`,
 
 			case "red", "amber", "green":
 
-				// Start a new span
-				ctx := context.Background()
-				tracer := otel.Tracer("kbot")
-				ctx, span := tracer.Start(
-					ctx,
-					"OnText",
-					trace.WithAttributes(attribute.String("component", "kbot")),
-					trace.WithAttributes(attribute.String("TraceID", trace.TraceID{1, 2, 3, 4}.String())),
-				)
-				defer span.End()
-
-				trace_id := span.SpanContext().TraceID().String()
-				//span_id := span.SpanContext().SpanID().String()
-				logger.Info().Str("TraceID", trace_id).Msg(payload)
-
-				meter := otel.GetMeterProvider().Meter("example")
-				counter, _ := meter.Int64Counter("telebot_OnText")
-				// Bind the counter to some labels
-
-				counter.Add(ctx, 1)
-				// pin = rpio.Pin(trafficSignal[payload]["pin"])
 				if trafficSignal[payload]["on"] == 0 {
-					// pin.Output()
 					trafficSignal[payload]["on"] = 1
 				} else {
-					// pin.Input()
 					trafficSignal[payload]["on"] = 0
 				}
 
@@ -194,9 +129,13 @@ to quickly create a Cobra application.`,
 	},
 }
 
+func pmetrics(ctx context.Context, payload string) {
+	meter := otel.GetMeterProvider().Meter(fmt.Sprintf("kbot_light_signal_%s", payload))
+	counter, _ := meter.Int64Counter(payload)
+	counter.Add(ctx, 1)
+}
 func init() {
 	ctx := context.Background()
-	initTracer(ctx)
 	initMetrics(ctx)
 	rootCmd.AddCommand(kbotCmd)
 
