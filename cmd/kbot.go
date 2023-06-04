@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	//	"github.com/stianeikeland/go-rpio"
+	"github.com/hirosassa/zerodriver"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
@@ -99,6 +100,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		logger := zerodriver.NewProductionLogger()
 
 		fmt.Printf("kbot %s started", appVersion)
 
@@ -134,18 +136,6 @@ to quickly create a Cobra application.`,
 
 		kbot.Handle(telebot.OnText, func(m telebot.Context) error {
 
-			// Start a new span
-			ctx := context.Background()
-			tracer := otel.Tracer("kbot")
-			ctx, span := tracer.Start(
-				ctx,
-				"OnText",
-				trace.WithAttributes(attribute.String("component", "addition")),
-				trace.WithAttributes(attribute.String("someKey", "someValue")),
-				trace.WithAttributes(attribute.Int("age", 89)),
-			)
-			defer span.End()
-
 			// var (
 			// 	err error
 			// 	pin = rpio.Pin(0)
@@ -158,6 +148,23 @@ to quickly create a Cobra application.`,
 				err = m.Send(fmt.Sprintf("Hello I'm Kbot %s!", appVersion))
 
 			case "red", "amber", "green":
+
+				// Start a new span
+				ctx := context.Background()
+				tracer := otel.Tracer("kbot")
+				ctx, span := tracer.Start(
+					ctx,
+					"OnText",
+					trace.WithAttributes(attribute.String("component", "addition")),
+					trace.WithAttributes(attribute.String("someKey", "someValue")),
+					trace.WithAttributes(attribute.Int("age", 89)),
+				)
+				defer span.End()
+
+				trace_id := span.SpanContext().TraceID().String()
+				//span_id := span.SpanContext().SpanID().String()
+				logger.Info().Str("TraceID", trace_id).Msg(payload)
+
 				meter := otel.GetMeterProvider().Meter("example")
 				counter, _ := meter.Int64Counter("l")
 				counter.Add(ctx, 1)
