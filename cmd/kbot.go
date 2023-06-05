@@ -89,7 +89,7 @@ to quickly create a Cobra application.`,
 		})
 
 		if err != nil {
-			logger.Fatal().Str("Error", err.Error()).Msg("Please check TOKEN_FILE")
+			logger.Fatal().Str("Error", err.Error()).Msg("Please check TELE_TOKEN")
 			return
 		} else {
 			logger.Info().Str("Version", appVersion).Msg("kbot started")

@@ -1,0 +1,67 @@
+version: "3"
+services:
+
+  # Kbot
+  kbot:
+    image: docker.io/denvasyliev/kbot:v1.0.0-1b6bd59-amd64
+    environment:
+      - METRICS_HOST=collector:4317
+      - TELE_TOKEN=${TELE_TOKEN}
+
+  # OTEL contrib collector for Laki
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.78.0
+    command: [--config=/etc/otel-collector-config.yaml]
+    volumes:
+      - ./collector/otel-collector-contrib.yaml:/etc/otel-collector-config.yaml 
+    ports:
+      - 4317:4317
+
+  # Prom
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus.yaml
+    ports:
+      - "9090:9090"
+  
+  # FluentBit
+  fluentbit:
+    image: fluent/fluent-bit:latest
+    volumes:
+      - ./fluent-bit/docker-metadata.lua:/fluent-bit/bin/docker-metadata.lua
+      - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+      - /var:/var
+      - /proc:/host/proc
+      - /sys:/host/sys
+    ports:
+      - "3001:3001"
+
+  # Loki
+  loki:
+    image: grafana/loki:2.8.2
+    command: 
+      - -config.file=/etc/loki/local-config.yaml
+      - -log.level=error
+    volumes:
+      - ./loki/loki-local-config.yaml:/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+  
+  # Grafana
+  grafana:
+    image: grafana/grafana:9.4.3
+    volumes:
+      - ./grafana/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+      - GF_SERVER_HTTP_PORT=3002
+    ports:
+      - "3002:3002"
