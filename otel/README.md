@@ -1,6 +1,6 @@
 # Open-telemetry observability
 
-This repository contains a sample configuration for Kbot that send logs to [OpenTelemetry Collector] and metrics to [OpenTelemetry Collector] or [Prometheus].
+Sample configuration for Kbot that send logs to [OpenTelemetry Collector] and metrics to [OpenTelemetry Collector] or [Prometheus].
 
 ## Prerequisites
 
@@ -10,5 +10,6 @@ This repository contains a sample configuration for Kbot that send logs to [Open
 ## How to run
 
 ```bash
+export TELE_TOKEN=<TOKEN>
 docker-compose up
 ```

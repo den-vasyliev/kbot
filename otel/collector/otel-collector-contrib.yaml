@@ -6,19 +6,11 @@ receivers:
         endpoint: "0.0.0.0:3030"
 
 exporters:
-  otlp:
-    endpoint: tempo:4317
-    tls:
-      insecure: true
   logging:
   loki:
     endpoint: http://loki:3100/loki/api/v1/push
   prometheus:
     endpoint: "0.0.0.0:8889"
-  prometheusremotewrite:
-    endpoint: "http://mimir:9009/api/v1/push"
-    tls:
-      insecure: true
 
 service:
   pipelines:
@@ -30,4 +22,4 @@ service:
       exporters: [logging]
     metrics:
       receivers: [otlp]
-      exporters: [logging,prometheus,prometheusremotewrite]
+      exporters: [logging,prometheus]
