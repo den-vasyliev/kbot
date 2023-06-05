@@ -3,7 +3,7 @@ services:
 
   # Kbot
   kbot:
-    image: docker.io/denvasyliev/kbot:v1.0.0-1b6bd59-amd64
+    image: docker.io/denvasyliev/kbot:v1.0.0-6ebd0a7-amd641 
     environment:
       - METRICS_HOST=collector:4317
       - TELE_TOKEN=${TELE_TOKEN}
