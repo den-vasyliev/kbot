@@ -12,3 +12,5 @@ secret:
   key: "token"
 securityContext:
   privileged: true
+env:
+  metrics_host: "collector:4317"
