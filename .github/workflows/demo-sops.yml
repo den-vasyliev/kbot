@@ -1,4 +1,7 @@
 name: Encrypt Secret Manifest and Save in Repository
+
+on: push
+
 jobs:
   encrypt_and_save:
     runs-on: ubuntu-latest
