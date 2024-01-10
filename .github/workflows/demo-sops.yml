@@ -16,7 +16,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 'auth'
+      - name: 'Authenticate to Google Cloud'
+        id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
           token_format: 'access_token'
@@ -28,3 +29,5 @@ jobs:
         run: |-
           curl https://secretmanager.googleapis.com/v1/projects/488768844240/secrets/demo/versions/1:access\
           --header "Authorization: Bearer ${{ steps.auth.outputs.access_token }}"
+
+
