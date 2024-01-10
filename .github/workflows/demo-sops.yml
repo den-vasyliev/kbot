@@ -18,16 +18,17 @@ jobs:
 
       - name: 'Authenticate to Google Cloud'
         id: 'auth'
-        uses: 'google-github-actions/auth@v0.4.0'
+        uses: 'google-github-actions/auth@v2'
         with:
           token_format: 'access_token'
           project_id: 'k8s-k3s'
           workload_identity_provider: 'projects/488768844240/locations/global/workloadIdentityPools/demo-pool/providers/github-provider'
           service_account: 'terraform@k8s-k3s.iam.gserviceaccount.com'
-
-      - name: 'Access secret'
-        run: |-
-          curl https://secretmanager.googleapis.com/v1/projects/488768844240/secrets/demo/versions/1:access\
-          --header "Authorization: Bearer ${{ steps.auth.outputs.access_token }}"
+    
+      - id: 'secrets'
+        uses: 'google-github-actions/get-secretmanager-secrets@v2'
+        with:
+          secrets: |-
+            token:projects/488768844240/secrets/demo
 
 
