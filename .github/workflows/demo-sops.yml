@@ -29,6 +29,6 @@ jobs:
         uses: 'google-github-actions/get-secretmanager-secrets@v2'
         with:
           secrets: |-
-            token:projects/488768844240/secrets/demo
+            token:k8s-k3s/demo
 
 
