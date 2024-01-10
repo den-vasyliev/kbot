@@ -3,7 +3,7 @@ name: Encrypt Secret Manifest and Save in Repository
 on:
   push:
     branches:
-      - main
+      - demo/sops
 
 jobs:
   encrypt_and_save:
