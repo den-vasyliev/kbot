@@ -21,7 +21,7 @@ jobs:
         with:
           token_format: 'access_token'
           project_id: 'k8s-k3s'
-          workload_identity_provider: 'projects/488768844240/locations/global/workloadIdentityPools/github/providers/github-provider'
+          workload_identity_provider: 'projects/488768844240/locations/global/workloadIdentityPools/demo-pool/providers/github-provider'
           service_account: 'terraform@k8s-k3s.iam.gserviceaccount.com'
 
       - name: 'Access secret'
