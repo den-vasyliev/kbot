@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Define command-line arguments
-
 RESOURCE_TYPE=$0
 
 # Retrieve resource usage statistics from Kubernetes
