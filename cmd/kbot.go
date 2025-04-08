@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stianeikeland/go-rpio"
-	telebot "gopkg.in/telebot.v3"
+	telebot "gopkg.in/telebot.v4"
 )
 
 var (
@@ -19,20 +19,31 @@ var (
 	TeleToken = os.Getenv("TELE_TOKEN")
 )
 
+// TrafficSignal represents a single traffic light signal
+type TrafficSignal struct {
+	Pin int8
+	On  bool
+}
+
 // kbotCmd represents the kbot command
 var kbotCmd = &cobra.Command{
 	Use:     "kbot",
 	Aliases: []string{"start"},
-	Short:   "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short:   "Telegram bot for controlling traffic light signals",
+	Long: `A Telegram bot that allows controlling traffic light signals through GPIO pins.
+The bot accepts commands to toggle red, amber, and green lights on/off.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Usage:
+  /s red    - Toggle red light
+  /s amber  - Toggle amber light
+  /s green  - Toggle green light
+  hello     - Get a greeting from the bot`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if TeleToken == "" {
+			log.Fatal("TELE_TOKEN environment variable is not set")
+		}
 
-		fmt.Printf("kbot %s started", appVersion)
+		fmt.Printf("kbot %s started\n", appVersion)
 
 		kbot, err := telebot.NewBot(telebot.Settings{
 			URL:    "",
@@ -41,61 +52,54 @@ to quickly create a Cobra application.`,
 		})
 
 		if err != nil {
-			log.Fatalf("Plaese check TELE_TOKEN env variable. %s", err)
-			return
+			log.Fatalf("Please check TELE_TOKEN env variable. %s", err)
 		}
 
-		err = rpio.Open()
-		if err != nil {
-			log.Printf("Unable to open gpio: %s", err.Error())
+		if err := rpio.Open(); err != nil {
+			log.Fatalf("Unable to open GPIO: %s", err)
 		}
-
 		defer rpio.Close()
 
-		trafficSignal := make(map[string]map[string]int8)
+		// Initialize traffic signals
+		trafficSignals := map[string]*TrafficSignal{
+			"red":   {Pin: 12, On: false},
+			"amber": {Pin: 27, On: false},
+			"green": {Pin: 22, On: false},
+		}
 
-		trafficSignal["red"] = make(map[string]int8)
-		trafficSignal["amber"] = make(map[string]int8)
-		trafficSignal["green"] = make(map[string]int8)
-
-		trafficSignal["red"]["pin"] = 12
-		//default on/off
-		//trafficSignal["red"]["on"]=0
-		trafficSignal["amber"]["pin"] = 27
-		trafficSignal["green"]["pin"] = 22
+		// Initialize all pins as input
+		for _, signal := range trafficSignals {
+			pin := rpio.Pin(signal.Pin)
+			pin.Input()
+		}
 
 		kbot.Handle(telebot.OnText, func(m telebot.Context) error {
-
-			var (
-				err error
-				pin = rpio.Pin(0)
-			)
-			log.Print(m.Message().Payload, m.Text())
+			log.Printf("Received message: %s", m.Text())
 			payload := m.Message().Payload
 
 			switch payload {
 			case "hello":
-				err = m.Send(fmt.Sprintf("Hello I'm Kbot %s!", appVersion))
+				return m.Send(fmt.Sprintf("Hello I'm Kbot %s!", appVersion))
 
 			case "red", "amber", "green":
-				pin = rpio.Pin(trafficSignal[payload]["pin"])
-				if trafficSignal[payload]["on"] == 0 {
+				signal := trafficSignals[payload]
+				pin := rpio.Pin(signal.Pin)
+
+				if !signal.On {
 					pin.Output()
-					trafficSignal[payload]["on"] = 1
+					pin.High()
+					signal.On = true
 				} else {
+					pin.Low()
 					pin.Input()
-					trafficSignal[payload]["on"] = 0
+					signal.On = false
 				}
 
-				err = m.Send(fmt.Sprintf("Switch %s light signal to %d", payload, trafficSignal[payload]["on"]))
+				return m.Send(fmt.Sprintf("Switched %s light %s", payload, map[bool]string{true: "on", false: "off"}[signal.On]))
 
 			default:
-				err = m.Send("Usage: /s red|amber|green")
-
+				return m.Send("Usage: /s red|amber|green")
 			}
-
-			return err
-
 		})
 
 		kbot.Start()

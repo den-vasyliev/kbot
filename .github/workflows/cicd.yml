@@ -1,9 +1,15 @@
 name: KBOT-CICD
 
-on: push
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 env:
   TARGETARCH: amd64
+  TARGETOS: linux
+  CGO_ENABLED: 0
   
 jobs:
   ci:
@@ -11,44 +17,81 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-                          
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Run test
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Run tests
         run: make test
+
+      - name: Build
+        run: make build TARGETARCH=${{ env.TARGETARCH }} TARGETOS=${{ env.TARGETOS }}
+
+  cd:
+    name: CD
+    needs: ci
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Set version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0)-$(git rev-parse --short HEAD)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Using version: $VERSION"
 
       - name: Docker Hub login
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build&Push
+
+      - name: Build and push Docker image
         env:
           APP: "kbot"
           REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
-        run: make image push TARGETARCH=$TARGETARCH
-      - name: Clean
-        run: make clean TARGETARCH=$TARGETARCH
-      
-  cd:
-    name: CD
-    needs: ci
-    runs-on: ubuntu-latest
+        run: |
+          make image push \
+            TARGETARCH=${{ env.TARGETARCH }} \
+            TARGETOS=${{ env.TARGETOS }} \
+            VERSION=${{ env.VERSION }}
 
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - run: echo "VERSION=$(git describe --tags --abbrev=0)-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      - name: Update Helm chart
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.image.tag=strenv(VERSION) | .image.arch=strenv(TARGETARCH)' helm/values.yaml
 
-    - uses: mikefarah/yq@master
-      with:
-        cmd: yq -i '.image.tag=strenv(VERSION) | .image.arch=strenv(TARGETARCH)' helm/values.yaml
-    - run: |
-        git config user.name github-actions
-        git config user.email github-actions@github.com
-        git commit -am "update version $VERSION"
-        git push
+      - name: Commit Helm chart changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add helm/values.yaml
+          git commit -m "chore: update version to ${{ env.VERSION }}"
+          git push
+
+      - name: Cleanup
+        run: make clean TARGETARCH=${{ env.TARGETARCH }}
