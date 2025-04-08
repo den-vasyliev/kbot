@@ -24,7 +24,7 @@ help:
 	@echo "Available targets:"
 	@echo "  help     - Show this help message"
 	@echo "  format   - Format Go code"
-	@echo "  lint     - Run golint"
+	@echo "  lint     - Run golangci-lint"
 	@echo "  test     - Run tests"
 	@echo "  get      - Get dependencies"
 	@echo "  build    - Build the application"
@@ -44,10 +44,15 @@ format:
 	@echo "Formatting Go code..."
 	@gofmt -s -w ./
 
+# Install golangci-lint if not present
+.PHONY: install-lint
+install-lint:
+	@which golangci-lint >/dev/null || (echo "Installing golangci-lint..." && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest)
+
 # Run linter
-lint:
+lint: install-lint
 	@echo "Running linter..."
-	@golint ./...
+	@golangci-lint run ./...
 
 # Run tests
 test:
