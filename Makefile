@@ -1,1 +1,0 @@
-command: demo text
